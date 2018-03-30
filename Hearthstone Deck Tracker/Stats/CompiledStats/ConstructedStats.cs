@@ -10,6 +10,10 @@ using Hearthstone_Deck_Tracker.Annotations;
 using Hearthstone_Deck_Tracker.Enums;
 using Hearthstone_Deck_Tracker.Hearthstone;
 using Hearthstone_Deck_Tracker.Utility.Extensions;
+using LiveCharts;
+using LiveCharts.Defaults;
+using LiveCharts.Helpers;
+using LiveCharts.Wpf;
 
 #endregion
 
@@ -18,8 +22,15 @@ namespace Hearthstone_Deck_Tracker.Stats.CompiledStats
 	public class ConstructedStats : INotifyPropertyChanged
 	{
 		public static ConstructedStats Instance { get; } = new ConstructedStats();
-		public IEnumerable<GameStats> FilteredGames => GetFilteredGames();
-
+		public IEnumerable<GameStats> FilteredGames
+		{
+			get
+			{
+				IEnumerable<GameStats> games = GetFilteredGames();
+				Console.WriteLine($"Games: {games.Count()}");
+				return games;
+			}
+		}
 		public event PropertyChangedEventHandler PropertyChanged;
 
 		public IEnumerable<GameStats> GetFilteredGames(bool archived = true, bool playerClass = true, bool region = true,
@@ -153,7 +164,8 @@ namespace Hearthstone_Deck_Tracker.Stats.CompiledStats
 			return filtered.OrderByDescending(x => x.StartTime);
 		}
 
-		public IEnumerable<ChartStats> PlayedClassesPercent
+		readonly SolidColorBrush BlackSolidColorBrush = new SolidColorBrush(Colors.Black);
+		public SeriesCollection PlayedClassesPercent
 		{
 			get
 			{
@@ -162,28 +174,32 @@ namespace Hearthstone_Deck_Tracker.Stats.CompiledStats
 					games.GroupBy(x => ClassSelector(x.PlayerHero))
 						 .OrderBy(x => x.Key)
 						 .Select(x =>
-								 new ChartStats
+								 new PieSeries
 								 {
-									 Name = x.Key + " (" + Math.Round(100.0 * x.Count() / games.Count) + "%)",
-									 Value = x.Count(),
-									 Brush = new SolidColorBrush(Helper.GetClassColor(x.Key, true))
-								 });
+									 Title = x.Key + " (" + Math.Round(100.0 * x.Count() / games.Count) + "%)",
+									 Values = new ChartValues<ObservableValue> { new ObservableValue(x.Count()) },
+									 Fill = new SolidColorBrush(Helper.GetClassColor(x.Key, true)),
+									 DataLabels = true,
+									 Foreground = BlackSolidColorBrush
+								 }).AsSeriesCollection();
 			}
 		}
 
-		public IEnumerable<ChartStats> Winrate
+		public Func<double, string> LabelFormatter => val => $"{val:F2}%";
+
+		public double Winrate
 		{
 			get
 			{
 				var games = GetFilteredGames().ToList();
 				var wins = games.Where(x => x.Result == GameResult.Win).ToList();
 				return wins.Count > 0
-						   ? wins.Select(x => new ChartStats {Name = "Wins", Value = Math.Round(100.0 * wins.Count() / games.Count)})
-						   : EmptyChartStats("Wins");
+						   ? 100.0 * wins.Count() / games.Count
+						   : 0;
 			}
 		}
 
-		public IEnumerable<ChartStats> WinrateByCoin
+		public double WinrateCoin
 		{
 			get
 			{
@@ -191,24 +207,27 @@ namespace Hearthstone_Deck_Tracker.Stats.CompiledStats
 				var wins = games.Where(x => x.Result == GameResult.Win).ToList();
 				var gamesCoin = games.Where(x => x.Coin);
 				var winsCoin = wins.Where(x => x.Coin).ToList();
-				var gamesNoCoin = games.Where(x => !x.Coin);
-				var winsNoCoin = wins.Where(x => !x.Coin).ToList();
-				var total = wins.Count > 0
-								? wins.Select(x => new ChartStats {Name = "Total", Value = Math.Round(100.0 * wins.Count() / games.Count)})
-								: EmptyChartStats("Wins");
-				var coin = winsCoin.Count > 0
-								? winsCoin.Select(x => new ChartStats {Name = "With Coin", Value = 100.0 * winsCoin.Count() / gamesCoin.Count()})
-								: EmptyChartStats("With Coin");
-				var noCoin = winsNoCoin.Count > 0
-								 ? winsNoCoin.Select(x => new ChartStats {Name = "Without Coin", Value = 100.0 * winsNoCoin.Count() / gamesNoCoin.Count()})
-								 : EmptyChartStats("Without Coin");
-				return total.Concat(coin).Concat(noCoin);
+				return winsCoin.Count > 0
+								? 100.0 * winsCoin.Count() / gamesCoin.Count()
+								: 0; ;
 			}
 		}
 
-		private ChartStats[] EmptyChartStats(string name) => new[] {new ChartStats() {Name = name, Value = 0}};
+		public double WinrateNoCoin
+		{
+			get
+			{
+				var games = GetFilteredGames(coin: false).ToList();
+				var wins = games.Where(x => x.Result == GameResult.Win).ToList();
+				var gamesNoCoin = games.Where(x => !x.Coin);
+				var winsNoCoin = wins.Where(x => !x.Coin).ToList();
+				return winsNoCoin.Count > 0
+								 ? 100.0 * winsNoCoin.Count() / gamesNoCoin.Count()
+								 : 0;
+			}
+		}
 
-		public IEnumerable<ChartStats> OpponentClassesPercent
+		public SeriesCollection OpponentClassesPercent
 		{
 			get
 			{
@@ -217,40 +236,44 @@ namespace Hearthstone_Deck_Tracker.Stats.CompiledStats
 					games.GroupBy(x => ClassSelector(x.OpponentHero))
 						 .OrderBy(x => x.Key)
 						 .Select(g =>
-								 new ChartStats
+								 new PieSeries
 								 {
-									 Name = g.Key + " (" + Math.Round(100.0 * g.Count() / games.Count) + "%)",
-									 Value = g.Count(),
-									 Brush = new SolidColorBrush(Helper.GetClassColor(g.Key, true))
-								 });
+									 Title = g.Key + " (" + Math.Round(100.0 * g.Count() / games.Count) + "%)",
+									 Values = new ChartValues<ObservableValue> { new ObservableValue(g.Count()) },
+									 Fill = new SolidColorBrush(Helper.GetClassColor(g.Key, true)),
+									 DataLabels = true,
+									 Foreground = BlackSolidColorBrush
+								  }).AsSeriesCollection();
 			}
 		}
 
 		private static string ClassSelector(string heroClass) => (Enum.GetNames(typeof(HeroClass)).Any(c => c == heroClass) ? heroClass : "Other");
 
-		public IEnumerable<ChartStats> AvgWinratePerClass
+		public SeriesCollection AvgWinratePerClass
 			=> GetFilteredGames(DeckList.Instance.Decks, playerClass: false)
 					.GroupBy(x => ClassSelector(x.PlayerHero))
 					.OrderBy(x => x.Key)
 					.Select(x =>
-							new ChartStats
+							new ColumnSeries
 							{
-								Name = x.Key,
-								Value = Math.Round(100.0 * x.Count(g => g.Result == GameResult.Win) / x.Count(), 1),
-								Brush = new SolidColorBrush(Helper.GetClassColor(x.Key, true))
-							});
+								Title = x.Key,
+								Values = new ChartValues<ObservableValue> { new ObservableValue(Math.Round(100.0 * x.Count(g => g.Result == GameResult.Win) / x.Count(), 1)) },
+								Fill = new SolidColorBrush(Helper.GetClassColor(x.Key, true)),
+								DataLabels = true
+							}).AsSeriesCollection();
 
-		public IEnumerable<ChartStats> WinrateAgainstClass
+		public SeriesCollection WinrateAgainstClass
 			=> GetFilteredGames()
 					.GroupBy(x => ClassSelector(x.OpponentHero))
 					.OrderBy(x => x.Key)
 					.Select(x =>
-							new ChartStats
+							new ColumnSeries
 							{
-								Name = x.Key,
-								Value = Math.Round(100.0 * x.Count(g => g.Result == GameResult.Win) / x.Count(), 1),
-								Brush = new SolidColorBrush(Helper.GetClassColor(x.Key, true))
-							});
+								Title = x.Key,
+								Values = new ChartValues<ObservableValue> { new ObservableValue(Math.Round(100.0 * x.Count(g => g.Result == GameResult.Win) / x.Count(), 1)) },
+								Fill = new SolidColorBrush(Helper.GetClassColor(x.Key, true)),
+								DataLabels = true,
+							}).AsSeriesCollection();
 
 
 		public IEnumerable<ConstructedMatchup> Matchups
@@ -300,7 +323,9 @@ namespace Hearthstone_Deck_Tracker.Stats.CompiledStats
 
 		public void UpdateConstructedCharts()
 		{
-			OnPropertyChanged(nameof(WinrateByCoin));
+			OnPropertyChanged(nameof(Winrate));
+			OnPropertyChanged(nameof(WinrateCoin));
+			OnPropertyChanged(nameof(WinrateNoCoin));
 			OnPropertyChanged(nameof(AvgWinratePerClass));
 			OnPropertyChanged(nameof(WinrateAgainstClass));
 		}

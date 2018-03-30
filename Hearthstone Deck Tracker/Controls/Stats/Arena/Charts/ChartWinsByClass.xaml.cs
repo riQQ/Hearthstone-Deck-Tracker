@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Hearthstone_Deck_Tracker.Annotations;
 using Hearthstone_Deck_Tracker.Stats.CompiledStats;
+using LiveCharts;
 
 #endregion
 
@@ -26,14 +27,7 @@ namespace Hearthstone_Deck_Tracker.Controls.Stats.Arena.Charts
 			};
 		}
 
-		public IEnumerable<WinChartData> SeriesSourceWins
-		{
-			get
-			{
-				return
-					Enumerable.Range(0, 13).Select(n => new WinChartData {Index = n.ToString(), ItemsSource = ArenaStats.Instance.WinsByClass[n]});
-			}
-		}
+		public SeriesCollection SeriesSourceWins => ArenaStats.Instance.WinsByClass;
 
 		public event PropertyChangedEventHandler PropertyChanged;
 

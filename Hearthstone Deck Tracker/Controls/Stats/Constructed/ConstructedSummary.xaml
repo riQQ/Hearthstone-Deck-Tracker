@@ -4,9 +4,9 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:Hearthstone_Deck_Tracker.Controls.Stats.Constructed"
-             xmlns:metroChart="clr-namespace:De.TorstenMandelkow.MetroChart;assembly=De.TorstenMandelkow.MetroChart"
              xmlns:compiledStats="clr-namespace:Hearthstone_Deck_Tracker.Stats.CompiledStats"
              xmlns:lex="http://wpflocalizeextension.codeplex.com"
+             xmlns:liveChart="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
              lex:LocalizeDictionary.DesignCulture="en"
              lex:ResxLocalizationProvider.DefaultAssembly="HearthstoneDeckTracker"
              lex:ResxLocalizationProvider.DefaultDictionary="Strings"
@@ -30,27 +30,25 @@
                         </Grid.ColumnDefinitions>
                         <DockPanel Height="300" MinWidth="300" Grid.Column="0">
                             <TextBlock Text="{lex:Loc Stats_Constructed_Summary_Label_Winrate}" Foreground="#FF666666" FontFamily="Segoe UI" FontSize="18" DockPanel.Dock="Top" Margin="20,0,0,0"/>
-                            <metroChart:RadialGaugeChart Background="Transparent" Margin="0,0,0,-10"  ChartTitleVisibility="Collapsed" SelectedBrush="Transparent" ChartLegendVisibility="Collapsed">
-                                <metroChart:RadialGaugeChart.Series>
-                                    <metroChart:ChartSeries SeriesTitle="{lex:LocText Stats_Constructed_Summary_ChartTitle_Winrate}" DisplayMember="Name" ValueMember="Value" ItemsSource="{Binding Path=Winrate, Source={x:Static compiledStats:ConstructedStats.Instance}, IsAsync=True}"/>
-                                </metroChart:RadialGaugeChart.Series>
-                            </metroChart:RadialGaugeChart>
+                            <liveChart:Gauge Uses360Mode="True" From="0" To="100" Value="{Binding Path=Winrate, Source={x:Static compiledStats:ConstructedStats.Instance}, IsAsync=True}"
+                                             LabelFormatter="{Binding Path=LabelFormatter, Source={x:Static compiledStats:ConstructedStats.Instance}}">
+                                <liveChart:Gauge.GaugeRenderTransform>
+                                    <TransformGroup>
+                                        <RotateTransform Angle="90"></RotateTransform>
+                                        <ScaleTransform ScaleX="-1"></ScaleTransform>
+                                    </TransformGroup>
+                                </liveChart:Gauge.GaugeRenderTransform>
+                            </liveChart:Gauge>
                         </DockPanel>
                         <DockPanel Height="300" MinWidth="300" Grid.Column="1">
                             <TextBlock Text="{lex:Loc Stats_Constructed_Summary_Label_Played}" Foreground="#FF666666" FontFamily="Segoe UI" FontSize="18" DockPanel.Dock="Top" Margin="20,0,0,0"/>
-                            <metroChart:DoughnutChart Background="Transparent" Margin="0,0,0,-10"  ChartTitleVisibility="Collapsed" SelectedBrush="Transparent" ChartLegendVisibility="{Binding ElementName=CheckBoxShowLegends, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <metroChart:DoughnutChart.Series>
-                                    <metroChart:ChartSeries SeriesTitle="{lex:Loc Stats_Constructed_Summary_ChartTitle_Played}" DisplayMember="Name" ValueMember="Value" BrushMember="Brush"  ItemsSource="{Binding Path=PlayedClassesPercent, Source={x:Static compiledStats:ConstructedStats.Instance}, IsAsync=True}"/>
-                                </metroChart:DoughnutChart.Series>
-                            </metroChart:DoughnutChart>
+                            <liveChart:PieChart Background="Transparent" Margin="0,0,0,-10" InnerRadius="20" StartingRotationAngle="0" LegendLocation="Bottom"
+                                                   Series="{Binding Path=PlayedClassesPercent, Source={x:Static compiledStats:ConstructedStats.Instance}}" />
                         </DockPanel>
                         <DockPanel Height="300" MinWidth="300" Grid.Column="2">
                             <TextBlock Text="{lex:Loc Stats_Constructed_Summary_Label_Opponents}" Foreground="#FF666666" FontFamily="Segoe UI" FontSize="18" DockPanel.Dock="Top" Margin="20,0,0,0"/>
-                            <metroChart:DoughnutChart Background="Transparent" Margin="0,0,0,-10"  ChartTitleVisibility="Collapsed" SelectedBrush="Transparent" ChartLegendVisibility="{Binding ElementName=CheckBoxShowLegends, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <metroChart:DoughnutChart.Series>
-                                    <metroChart:ChartSeries SeriesTitle="{lex:Loc Stats_Constructed_Summary_ChartTitle_Opponents}" DisplayMember="Name" ValueMember="Value" BrushMember="Brush"  ItemsSource="{Binding Path=OpponentClassesPercent, Source={x:Static compiledStats:ConstructedStats.Instance}, IsAsync=True}"/>
-                                </metroChart:DoughnutChart.Series>
-                            </metroChart:DoughnutChart>
+                            <liveChart:PieChart Background="Transparent" Margin="0,0,0,-10" InnerRadius="20" StartingRotationAngle="0" LegendLocation="Bottom"
+                                                   Series="{Binding Path=OpponentClassesPercent, Source={x:Static compiledStats:ConstructedStats.Instance}}" />
                         </DockPanel>
                     </Grid>
                 </ScrollViewer>

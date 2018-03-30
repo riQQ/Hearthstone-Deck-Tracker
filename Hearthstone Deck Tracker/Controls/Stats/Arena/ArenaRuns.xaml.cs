@@ -14,23 +14,10 @@ namespace Hearthstone_Deck_Tracker.Controls.Stats.Arena
 	/// </summary>
 	public partial class ArenaRuns : INotifyPropertyChanged
 	{
-		private object _chartWinsControl = new ChartWins();
-
 		public ArenaRuns()
 		{
 			InitializeComponent();
 		}
-
-		public object ChartWinsControl
-		{
-			get { return _chartWinsControl; }
-			set
-			{
-				_chartWinsControl = value;
-				OnPropertyChanged();
-			}
-		}
-
 
 		public event PropertyChangedEventHandler PropertyChanged;
 
